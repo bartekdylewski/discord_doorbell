@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord Doorbell</title>
+    <style>
+        body {
+            background-color: #f0f0f0;  /* Początkowe tło */
+            transition: background-color 0.5s ease;  /* Płynna zmiana tła */
+        }
+
+        #sound-status {
+            color: red;
+            font-size: 18px;
+            margin-top: 10px;
+        }
+
+        #activated {
+            color: green;
+        }
+
+        /* Opcjonalnie dodajemy pełną wysokość strony */
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+
+        #content {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="content">
+        <h1>Discord Doorbell</h1>
+        <p>Strona dzwonka w warsztacie</p>
+
+        <div id="sound-status">
+            Kliknij gdziekolwiek na stronę, aby aktywować dźwięk!
+        </div>
+
+        <!-- Element audio - początkowo wstrzymany -->
+        <audio id="doorbell" src="/static/doorbell.mp3" autoplay muted></audio>
+    </div>
+
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <script>
+        const socket = io(); // Połączenie z serwerem WebSocket
+        const soundStatus = document.getElementById('sound-status');
+        
+        let isSoundActivated = false; // Flaga wskazująca, czy dźwięk został aktywowany
+
+        // Obsługa zdarzenia od serwera
+        socket.on('play_sound', () => {
+            if (isSoundActivated) {
+                const audio = document.getElementById('doorbell');
+                audio.play().catch((error) => {
+                    console.error("Błąd odtwarzania dźwięku:", error);
+                });
+            }
+        });
+
+        // Funkcja zmieniająca tło i aktywująca dźwięk po kliknięciu w dowolne miejsce na stronie
+        document.body.addEventListener('click', () => {
+            if (!isSoundActivated) {
+                // Aktywowanie dźwięku po kliknięciu
+                isSoundActivated = true;
+                soundStatus.textContent = "Dźwięk aktywowany! Teraz będzie działać.";
+                soundStatus.id = "activated";  // Zmiana koloru na zielony
+                document.getElementById('doorbell').muted = false;  // Odsunięcie mutowania dźwięku
+
+                // Zmiana tła strony na zielony, gdy dźwięk jest aktywowany
+                document.body.style.backgroundColor = "#a8d08d"; // Kolor tła po kliknięciu
+            }
+        });
+    </script>
+</body>
+</html>
