@@ -1,6 +1,7 @@
 from flask import Flask, render_template
 from flask_socketio import SocketIO, emit
 
+PORT = 8000
 app = Flask(__name__)
 socketio = SocketIO(app)
 
@@ -15,4 +16,5 @@ def ring():
     return 'Dźwięk wysłany', 200
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5000)  # Uruchomienie serwera Flask
+    print(f"uruchamiam serwer na http://localhost:{PORT}/")
+    socketio.run(app, host='0.0.0.0', port=PORT)  # Uruchomienie serwera Flask

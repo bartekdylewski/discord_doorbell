@@ -4,7 +4,7 @@ import requests
 import json
 
 # Inicjalizacja bota z odpowiednimi intencjami
-intents = discord.Intents.default()
+intents = discord.Intents.all()
 intents.messages = True
 intents.message_content = True  # Wymagane do odczytu treści wiadomości
 bot = commands.Bot(command_prefix="!", intents=intents)
