@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit
 
 PORT = 8000
@@ -11,9 +11,13 @@ def index():
 
 @app.route('/ring', methods=['POST'])
 def ring():
+    data = request.json  # Pobierz dane z żądania POST
+    message = data.get('message')  # Domyślna wiadomość
+    nickname = data.get('nickname', 'Gość')  # Domyślny nick
+
     # Emitowanie zdarzenia WebSocket do wszystkich połączonych klientów
-    socketio.emit('play_sound')
-    return 'Dźwięk wysłany', 200
+    socketio.emit('play_sound', {'message': message, 'nickname': nickname})
+    return 'Dźwięk i wiadomość wysłane', 200
 
 if __name__ == '__main__':
     print(f"uruchamiam serwer na http://localhost:{PORT}/")

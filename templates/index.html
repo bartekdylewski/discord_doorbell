@@ -1,26 +1,26 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Discord Doorbell</title>
     <style>
         body {
-            background-color: #f0f0f0;  /* Początkowe tło */
+            background-color: #ff5050;  /* Początkowe tło */
+            font-family: 'Noto Sans', sans-serif;
             transition: background-color 0.5s ease;  /* Płynna zmiana tła */
         }
 
-        #sound-status {
-            color: red;
-            font-size: 18px;
-            margin-top: 10px;
+        h1 {
+            font-size: 48px;
+            margin: 0;
         }
 
-        #activated {
-            color: green;
+        p {
+            font-size: 24px;
+            margin: 0;
         }
 
-        /* Opcjonalnie dodajemy pełną wysokość strony */
         html, body {
             height: 100%;
             margin: 0;
@@ -34,15 +34,62 @@
             align-items: center;
             text-align: center;
         }
+        #countdown-timer {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(0,0,0,0.1);
+            border-radius: 10px;
+            display: inline-block;
+        }
+
+        .timer-item {
+            display: inline-block;
+            margin: 0 15px;
+            text-align: center;
+        }
+
+        .timer-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #000000;
+            display: block;
+        }
+
+        .timer-label {
+            font-size: 1em;
+            color: #080808;
+            text-transform: uppercase;
+        }
+
     </style>
 </head>
 <body>
     <div id="content">
-        <h1>Discord Doorbell</h1>
+        <h1 >Discord Doorbell</h1>
         <p>Strona dzwonka w warsztacie</p>
 
-        <div id="sound-status">
-            Kliknij gdziekolwiek na stronę, aby aktywować dźwięk!
+        <div id="countdown-timer" data-end-date="1741215600"> <!-- Time until Taiwan flight -->
+            <p>Do wylotu na Taiwan zostało:</p>
+            <div class="timer-item">
+                <span class="timer-number" id="days">00</span>
+                <span class="timer-label">Dni</span>
+            </div>
+            <div class="timer-item">
+                <span class="timer-number" id="hours">00</span>
+                <span class="timer-label">Godzin</span>
+            </div>
+            <div class="timer-item">
+                <span class="timer-number" id="minutes">00</span>
+                <span class="timer-label">Minut</span>
+            </div>
+            <div class="timer-item">
+                <span class="timer-number" id="seconds">00</span>
+                <span class="timer-label">Sekund</span>
+            </div>
+        </div>
+
+        <div id="sound-status" class="inactive">
+            <p>Kliknij gdziekolwiek na stronę, aby aktywować dźwięk!</p>
         </div>
 
         <!-- Element audio - początkowo wstrzymany -->
@@ -56,13 +103,44 @@
         
         let isSoundActivated = false; // Flaga wskazująca, czy dźwięk został aktywowany
 
+        function speakText(text) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        
+        // Ustawienie języka na polski
+        utterance.lang = 'pl-PL';  // Krajowy kod języka
+        
+        // Opcjonalnie: wybór konkretnego głosu
+        const polishVoice = speechSynthesis.getVoices().find(voice => 
+            voice.lang === 'pl-PL' && voice.name.includes('Polish')
+        );
+        
+        if(polishVoice) {
+            utterance.voice = polishVoice;
+            console.log('Używam polskiego głosu:', polishVoice.name);
+        }
+        
+        window.speechSynthesis.speak(utterance);
+    }
+
+    // Opcjonalnie: inicjalizacja głosów po załadowaniu strony
+    let voices = [];
+    speechSynthesis.addEventListener('voiceschanged', () => {
+        voices = speechSynthesis.getVoices();
+        console.log('Dostępne głosy:', voices);
+    });
+
         // Obsługa zdarzenia od serwera
-        socket.on('play_sound', () => {
+        socket.on('play_sound', (data) => {
             if (isSoundActivated) {
                 const audio = document.getElementById('doorbell');
                 audio.play().catch((error) => {
                     console.error("Błąd odtwarzania dźwięku:", error);
                 });
+
+                // Odczytanie wiadomości i nicku
+                const message = data.message;
+                const nickname = data.nickname;
+                speakText(`${nickname} mówi: ${message}`);
             }
         });
 
@@ -71,14 +149,43 @@
             if (!isSoundActivated) {
                 // Aktywowanie dźwięku po kliknięciu
                 isSoundActivated = true;
-                soundStatus.textContent = "Dźwięk aktywowany! Teraz będzie działać.";
-                soundStatus.id = "activated";  // Zmiana koloru na zielony
+                soundStatus.innerHTML == "<p>Dźwięk aktywowany! Teraz będzie działać.</p>";
+                document.body.classList.remove('inactive');
+                document.body.classList.add('active');
                 document.getElementById('doorbell').muted = false;  // Odsunięcie mutowania dźwięku
 
                 // Zmiana tła strony na zielony, gdy dźwięk jest aktywowany
-                document.body.style.backgroundColor = "#a8d08d"; // Kolor tła po kliknięciu
+                document.body.style.backgroundColor = "#ffffff"; // Kolor tła po kliknięciu
             }
         });
     </script>
+    <!-- Timer code-->
+    <script>
+        function updateTimer() {
+            const endDate = parseInt(document.getElementById('countdown-timer').dataset.endDate) * 1000;
+            const now = new Date().getTime();
+            const distance = endDate - now;
+    
+            if (distance < 0) {
+                document.getElementById('countdown-timer').innerHTML = "<p>Czas upłynął!</p>";
+                return;
+            }
+    
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+    
+            document.getElementById('days').textContent = String(days).padStart(2, '0');
+            document.getElementById('hours').textContent = String(hours).padStart(2, '0');
+            document.getElementById('minutes').textContent = String(minutes).padStart(2, '0');
+            document.getElementById('seconds').textContent = String(seconds).padStart(2, '0');
+        }
+    
+        // Uruchom timer i aktualizuj co sekundę
+        setInterval(updateTimer, 1000);
+        updateTimer(); // Pierwsze wywołanie
+    </script>
+    
 </body>
 </html>

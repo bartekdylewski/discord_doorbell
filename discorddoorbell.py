@@ -14,7 +14,7 @@ with open("config.json", "r") as f:
     config = json.load(f)
     DISCORD_BOT_TOKEN = config["DISCORD_BOT_TOKEN"]
     AUTHORIZED_CHANNEL_ID = config["AUTHORIZED_CHANNEL_ID"]
-    FLASK_SERVER_URL = config["FLASK_SERVER_URL"]  # Zmień na adres serwera Flask, jeśli inny
+    FLASK_SERVER_URL = config["FLASK_SERVER_URL"]  # Powinno być "http://localhost:8000/ring"
 
 
 @bot.event
@@ -23,25 +23,28 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
-    # Ignoruj wiadomości od bota
     if message.author == bot.user:
         return
-
-    # Wypisanie każdej wiadomości w konsoli
-    print(f"{message.author}: {message.content}")
-
-    # Przetwarzaj wiadomości w kontekście komend
     await bot.process_commands(message)
 
 # Komenda !dzwonek
 @bot.command()
-async def dzwonek(ctx):
+async def dzwonek(ctx, *, message: str = "Open drzwiczki!"):
+    # Sprawdzenie czy komenda jest używana w autoryzowanym kanale
+    if str(ctx.channel.id) != AUTHORIZED_CHANNEL_ID:
+        await ctx.send("⛔ Ta komenda jest dostępna tylko w określonym kanale!")
+        return
+ 
     try:
-        # Wysyłanie zapytania POST do serwera Flask z channel_id
-        payload = {'channel_id': str(ctx.channel.id)}
+        # Przygotowanie danych do wysłania
+        payload = {
+            "nickname": ctx.author.display_name,  # Nick użytkownika z Discord
+            "message": message  # Treść wiadomości po komendzie
+        }
+        
+        # Wysyłanie zapytania POST do serwera Flask
         response = requests.post(FLASK_SERVER_URL, json=payload)
         
-        # Sprawdzenie odpowiedzi serwera
         if response.status_code == 200:
             await ctx.send("🔔 Dzwonek został uruchomiony!")
         else:
@@ -50,4 +53,4 @@ async def dzwonek(ctx):
         await ctx.send(f"```⚠️ Błąd połączenia z serwerem Flask: {e}```")
 
 # Uruchomienie bota
-bot.run(DISCORD_BOT_TOKEN) # Wstaw tutaj token swojego bota
+bot.run(DISCORD_BOT_TOKEN)
