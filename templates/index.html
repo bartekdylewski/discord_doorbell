@@ -149,7 +149,7 @@
             if (!isSoundActivated) {
                 // Aktywowanie dźwięku po kliknięciu
                 isSoundActivated = true;
-                soundStatus.innerHTML == "<p>Dźwięk aktywowany! Teraz będzie działać.</p>";
+                soundStatus.textContent = '';
                 document.body.classList.remove('inactive');
                 document.body.classList.add('active');
                 document.getElementById('doorbell').muted = false;  // Odsunięcie mutowania dźwięku
